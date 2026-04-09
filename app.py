@@ -28,6 +28,7 @@ from flask import Flask, request, jsonify, render_template
 from flask_cors import CORS
 import sqlite3
 import datetime
+import pytz
 
 # ─────────────────────────────────────────────────────────────────────────────
 # VYTVORENIE APLIKÁCIE
@@ -120,7 +121,8 @@ def uloz_do_databazy(hodnota, vstupna_jednotka, vystupna_jednotka, vysledok, ses
     """
     conn = sqlite3.connect(DATABASE)
     cursor = conn.cursor()
-    cas = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    tz_bratislava = pytz.timezone('Europe/Bratislava')
+    cas = datetime.datetime.now(tz_bratislava).strftime("%Y-%m-%d %H:%M:%S")
     cursor.execute(
         "INSERT INTO vypocty (hodnota, vstupna_jednotka, vystupna_jednotka, vysledok, cas, sessionId) VALUES (?, ?, ?, ?, ?, ?)",
         (hodnota, vstupna_jednotka, vystupna_jednotka, vysledok, cas, sessionId)
@@ -215,13 +217,16 @@ def vypocet():
 
     nove_id = uloz_do_databazy(hodnota, from_unit, to_unit, vysledok, sessionId)
 
+    tz_bratislava = pytz.timezone('Europe/Bratislava')
+    cas_bratislava = datetime.datetime.now(tz_bratislava).strftime("%Y-%m-%d %H:%M:%S")
+    
     return jsonify({
         "id": nove_id,
         "hodnota": hodnota,
         "fromUnit": from_unit,
         "toUnit": to_unit,
         "vysledok": round(vysledok, 5),
-        "cas": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "cas": cas_bratislava,
         "sessionId": sessionId
     })
 
@@ -348,12 +353,15 @@ def iot_odosli():
         return jsonify({"chyba": "Chýbajú parametre teplota a vlhkost!"}), 400
 
     # Tu by sme dáta uložili do databázy (zjednodušené pre ukážku)
+    tz_bratislava = pytz.timezone('Europe/Bratislava')
+    cas_bratislava = datetime.datetime.now(tz_bratislava).strftime("%Y-%m-%d %H:%M:%S")
+    
     return jsonify({
         "status": "ok",
         "prijate_data": {
             "teplota": teplota,
             "vlhkost": vlhkost,
-            "cas": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "cas": cas_bratislava
         },
         "sprava": "Dáta zo senzora boli úspešne prijaté."
     })
