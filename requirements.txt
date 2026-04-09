@@ -1,0 +1,13 @@
+# =============================================================================
+# REQUIREMENTS.TXT — Zoznam Python knižníc potrebných pre projekt
+# =============================================================================
+# Inštalácia: pip install -r requirements.txt
+#
+# Flask         = webový framework (základ servera)
+# flask-cors    = riešenie CORS politiky (komunikácia medzi doménami)
+# gunicorn      = produkčný WSGI server (pre Azure nasadenie)
+# =============================================================================
+
+Flask==3.1.1
+flask-cors==5.0.1
+gunicorn==23.0.0
