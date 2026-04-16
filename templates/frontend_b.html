@@ -1,188 +1,200 @@
-<!--
-=============================================================================
-FRONTEND B — Klientsky / IoT Pohľad
-=============================================================================
-Táto stránka REPREZENTUJE DRUHÚ DOMÉNU v IoT architektúre.
-
-V produkcii by bežala na inej URL, napr.:
-  Frontend A: http://iot-admin.azurewebsites.net
-  Frontend B: http://iot-klient.azurewebsites.net  ← toto
-
-Kľúčové koncepty:
-  1. Táto stránka ŽIADNE dáta nezadáva — iba ČÍTA z API
-  2. Komunikuje s backendom cez fetch() — GET requesty na API endpointy
-  3. Dáta sa automaticky obnovia každých 5 sekúnd (polling)
-  4. CORS musí byť povolený na backende, inak komunikácia zlyhá
-
-Pre študentov: Toto je príklad toho, ako IoT dashboard zobrazuje dáta
-               zo senzorov alebo výsledky spracované na serveri.
-=============================================================================
--->
 <!DOCTYPE html>
 <html lang="sk">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📡 Frontend B — IoT Klient</title>
+    <title>📦 Frontend B — IoT Klient (BOX DESIGN)</title>
     <style>
-        /* ---------- ZÁKLAD ---------- */
+        /* ---------- RESET & BOX PRINCIPLE (ŽIADNE ZAOBLENIA) ---------- */
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #0a0e27, #1a1f3a, #0f1729);
+            font-family: 'Segoe UI', 'Roboto', system-ui, sans-serif;
+            background: #0b0f1c;
+            background-image: linear-gradient(145deg, #0a0e1a 0%, #111827 100%);
             min-height: 100vh;
-            color: #e0e0e0;
-            padding: 20px;
+            color: #eef2ff;
+            padding: 24px;
         }
 
         .container {
-            max-width: 900px;
+            max-width: 980px;
             margin: 0 auto;
         }
 
-        /* ---------- HLAVIČKA ---------- */
+        /* ---------- HLAVIČKA – ostré boxy ---------- */
         .header {
             text-align: center;
-            padding: 30px 0;
+            padding: 24px 16px 20px;
+            border-bottom: 3px solid #2c5f8a;
+            margin-bottom: 28px;
         }
 
         .header h1 {
-            font-size: 2em;
-            color: #00d9ff;
-            margin-bottom: 10px;
+            font-size: 2.1rem;
+            font-weight: 700;
+            letter-spacing: -0.5px;
+            color: #38bdf8;
+            margin-bottom: 8px;
         }
 
+        /* BADGE – hranaté štítky, žiadne oblúky */
         .badge {
             display: inline-block;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.8em;
+            padding: 5px 14px;
+            font-size: 0.7rem;
+            font-weight: 600;
             margin: 4px;
+            text-transform: uppercase;
+            border-radius: 0px;
+            letter-spacing: 0.5px;
         }
 
         .badge-red {
-            background: rgba(0, 217, 255, 0.15);
-            color: #00d9ff;
-            border: 1px solid rgba(0, 217, 255, 0.3);
+            background: #1e293b;
+            color: #7dd3fc;
+            border: 1px solid #334155;
         }
 
         .badge-green {
-            background: rgba(0, 200, 83, 0.15);
-            color: #00c853;
-            border: 1px solid rgba(0, 200, 83, 0.3);
+            background: #0f172a;
+            color: #5ee0fa;
+            border: 1px solid #2c5f8a;
         }
 
-        /* ---------- STATUS BAR ---------- */
-        /* Zobrazuje stav pripojenia k backendu — živá ukážka komunikácie */
+        /* ---------- STATUS BAR – box namiesto guľatých prvkov ---------- */
         .status-bar {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 12px;
+            background: #0f172ad9;
+            border: 1px solid #2d3a5e;
             padding: 16px 24px;
-            margin-bottom: 24px;
+            margin-bottom: 28px;
+            box-shadow: 4px 4px 0px rgba(0, 0, 0, 0.2);
+            border-radius: 0px;
         }
 
-        .status-dot {
-            width: 10px;
-            height: 10px;
-            border-radius: 50%;
+        /* Namiesto kruhovej bodky používame malý ŠTVOREC (box) */
+        .status-box {
+            width: 14px;
+            height: 14px;
             display: inline-block;
-            margin-right: 8px;
+            margin-right: 10px;
+            background-color: #ff5252;
+            border: 1px solid rgba(255,255,255,0.3);
+            transition: all 0.2s;
+            border-radius: 0px;
         }
 
-        .status-dot.online {
-            background: #00c853;
-            box-shadow: 0 0 10px rgba(0, 200, 83, 0.5);
-            animation: pulse 2s infinite;
+        .status-box.online {
+            background-color: #00c853;
+            box-shadow: 0 0 6px #00c853;
         }
 
-        .status-dot.offline {
-            background: #ff5252;
+        .status-box.offline {
+            background-color: #ff5252;
         }
 
-        @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.5; }
+        @keyframes pulseBox {
+            0%, 100% { opacity: 0.7; background-color: #00c853; }
+            50% { opacity: 1; background-color: #5ee0fa; }
         }
 
-        /* ---------- KARTY ---------- */
+        .status-box.online {
+            animation: pulseBox 1.2s infinite;
+        }
+
+        /* ---------- KARTY – čisté krabice (bez border-radius) ---------- */
         .card {
-            background: rgba(255, 255, 255, 0.05);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 16px;
-            padding: 28px;
-            margin-bottom: 24px;
-            backdrop-filter: blur(10px);
+            background: #0f172ad9;
+            backdrop-filter: blur(2px);
+            border: 1px solid #2d3a5e;
+            padding: 28px 32px;
+            margin-bottom: 28px;
+            box-shadow: 6px 6px 0px rgba(0, 0, 0, 0.25);
+            border-radius: 0px;
         }
 
         .card h2 {
-            color: #00d9ff;
-            margin-bottom: 16px;
-            font-size: 1.3em;
+            color: #38bdf8;
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+            font-weight: 700;
+            border-left: 5px solid #38bdf8;
+            padding-left: 16px;
         }
 
-        /* ---------- POSLEDNÝ VÝPOČET (veľký display) ---------- */
+        /* ---------- VEĽKÝ DISPLAY (BOX verzia) ---------- */
         .big-display {
             text-align: center;
-            padding: 30px;
+            padding: 28px;
+            background: #03071240;
+            border: 1px solid #2d4a6e;
         }
 
         .big-number {
-            font-size: 4em;
-            font-weight: 700;
-            color: #00d9ff;
-            text-shadow: 0 0 30px rgba(0, 217, 255, 0.3);
+            font-size: 4rem;
+            font-weight: 800;
+            color: #5ee0fa;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
         }
 
         .big-detail {
-            color: #8892b0;
-            font-size: 1.1em;
-            margin-top: 10px;
+            color: #cbd5e1;
+            font-size: 1rem;
+            margin-top: 12px;
         }
 
         .big-time {
-            color: #555;
-            font-size: 0.85em;
+            color: #6c86a3;
+            font-size: 0.8rem;
             margin-top: 8px;
         }
 
-        /* ---------- ŠTATISTIKY GRID ---------- */
+        /* ---------- ŠTATISTIKY GRID – box karty ---------- */
         .stats-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-            gap: 16px;
-            margin-top: 16px;
+            gap: 18px;
+            margin-top: 20px;
         }
 
         .stat-card {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            border-radius: 12px;
-            padding: 20px;
+            background: #030712b3;
+            border: 1px solid #334155;
+            padding: 20px 12px;
             text-align: center;
+            transition: all 0.2s;
+            border-radius: 0px;
+        }
+
+        .stat-card:hover {
+            background: #111a2c;
+            border-color: #38bdf8;
         }
 
         .stat-value {
-            font-size: 1.8em;
-            font-weight: 700;
-            color: #00d9ff;
+            font-size: 2rem;
+            font-weight: 800;
+            color: #5ee0fa;
+            font-family: monospace;
         }
 
         .stat-label {
-            color: #8892b0;
-            font-size: 0.8em;
-            margin-top: 4px;
+            color: #9ca3af;
+            font-size: 0.7rem;
+            margin-top: 8px;
             text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        /* ---------- LIVE FEED ---------- */
+        /* ---------- LIVE FEED – tabuľka v box štýle ---------- */
         .live-feed {
-            max-height: 400px;
+            max-height: 450px;
             overflow-y: auto;
+            border: 1px solid #2d3a5e;
         }
 
         .feed-item {
@@ -190,476 +202,467 @@ Pre študentov: Toto je príklad toho, ako IoT dashboard zobrazuje dáta
             justify-content: space-between;
             align-items: center;
             padding: 12px 16px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-            transition: background 0.3s;
+            border-bottom: 1px solid #1e293b;
+            background: #0a0f1c;
         }
 
         .feed-item:hover {
-            background: rgba(255, 255, 255, 0.03);
+            background: #12192f;
         }
 
         .feed-item.new {
-            animation: highlightNew 2s ease;
+            animation: highlightBox 1.4s ease;
+            background: #0e2a3b;
         }
 
-        @keyframes highlightNew {
-            from { background: rgba(0, 217, 255, 0.2); }
-            to { background: transparent; }
+        @keyframes highlightBox {
+            from { background: #1e4b6e; border-left: 4px solid #5ee0fa; }
+            to { background: #0a0f1c; border-left: 1px solid #2d3a5e; }
         }
 
         .feed-id {
-            color: #00d9ff;
+            color: #7dd3fc;
             font-weight: 700;
-            font-size: 0.85em;
-            min-width: 50px;
+            font-size: 0.8rem;
+            min-width: 55px;
+            font-family: monospace;
         }
 
         .feed-calc {
-            color: #e0e0e0;
+            color: #e2e8f0;
             flex-grow: 1;
-            padding: 0 15px;
+            padding: 0 16px;
+            font-size: 0.9rem;
         }
 
         .feed-result {
-            color: #00d9ff;
+            color: #5ee0fa;
             font-weight: 700;
-            font-size: 1.1em;
-            min-width: 80px;
+            font-size: 1rem;
+            min-width: 90px;
             text-align: right;
+            font-family: monospace;
         }
 
         .feed-time {
-            color: #555;
-            font-size: 0.75em;
+            color: #6b7a9a;
+            font-size: 0.7rem;
             min-width: 130px;
             text-align: right;
+            font-family: monospace;
         }
 
-        /* ---------- KONFIGURÁCIA PANEL ---------- */
+        /* ---------- KONFIGURAČNÝ PANEL (BOX) ---------- */
         .config-panel {
-            background: rgba(0, 217, 255, 0.08);
-            border: 1px solid rgba(0, 217, 255, 0.2);
-            border-radius: 12px;
-            padding: 20px;
-            margin-bottom: 24px;
+            background: #111a2c;
+            border: 1px solid #2d4a6e;
+            padding: 24px;
+            margin-bottom: 28px;
+            border-left: 6px solid #38bdf8;
+            border-radius: 0px;
         }
 
         .config-panel h3 {
-            color: #00d9ff;
-            margin-bottom: 10px;
+            color: #facc15;
+            margin-bottom: 12px;
+            font-size: 1.2rem;
+            border-left: 3px solid #facc15;
+            padding-left: 12px;
         }
 
         .config-panel code {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 2px 8px;
-            border-radius: 4px;
+            background: #00000066;
+            padding: 3px 8px;
             font-family: 'Courier New', monospace;
-            color: #00d9ff;
-            font-size: 0.9em;
+            color: #7dd3fc;
+            font-size: 0.8rem;
+            border: 1px solid #2d4a6e;
+            border-radius: 0px;
         }
 
         .config-input {
             display: flex;
-            gap: 10px;
-            margin-top: 12px;
+            gap: 12px;
+            margin-top: 16px;
             align-items: center;
         }
 
         .config-input input {
             flex-grow: 1;
-            padding: 10px 14px;
-            background: rgba(255, 255, 255, 0.08);
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            border-radius: 8px;
-            color: #fff;
+            padding: 12px 14px;
+            background: #020617;
+            border: 2px solid #334155;
+            color: #f1f5f9;
             font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            border-radius: 0px;
+        }
+
+        .config-input input:focus {
+            outline: none;
+            border-color: #38bdf8;
         }
 
         .config-input button {
-            padding: 10px 20px;
-            background: #00d9ff;
-            color: #000;
-            border: none;
-            border-radius: 8px;
+            padding: 12px 24px;
+            background: #0f2b3f;
+            border: 2px solid #38bdf8;
+            color: white;
+            font-weight: 700;
+            text-transform: uppercase;
             cursor: pointer;
-            font-weight: 600;
+            transition: all 0.15s;
+            border-radius: 0px;
+            letter-spacing: 1px;
         }
 
         .config-input button:hover {
-            background: #00b3cc;
+            background: #1e4b6e;
+            transform: translate(-2px, -2px);
+            box-shadow: 3px 3px 0px rgba(0,0,0,0.3);
         }
 
-        /* ---------- EMPTY STATE ---------- */
+        /* ---------- EMPTY STATE (box) ---------- */
         .empty-state {
             text-align: center;
-            padding: 40px;
-            color: #8892b0;
+            padding: 40px 20px;
+            color: #9ca3af;
+            background: #03071260;
+            border: 1px dashed #2d4a6e;
         }
 
         .empty-state .emoji {
-            font-size: 3em;
-            margin-bottom: 15px;
+            font-size: 2.8rem;
+            margin-bottom: 12px;
         }
 
-        /* ---------- SESSION ID PANEL ---------- */
+        /* ---------- SESSION ID PANEL – ostrý box ---------- */
         .session-panel-info {
-            background: rgba(0, 217, 255, 0.08);
-            border: 1px solid rgba(0, 217, 255, 0.2);
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 20px;
-            font-size: 0.85em;
+            background: #0f1722;
+            border: 1px solid #2c5f8a;
+            padding: 18px 22px;
+            margin-top: 24px;
+            border-left: 6px solid #38bdf8;
+            border-radius: 0px;
         }
 
         .session-panel-info strong {
-            color: #00d9ff;
+            color: #90e0ff;
+            font-size: 0.85rem;
+            text-transform: uppercase;
         }
 
         .session-ids-display {
-            background: rgba(0, 0, 0, 0.3);
-            padding: 10px 12px;
-            border-radius: 6px;
-            margin-top: 10px;
+            background: #010409;
+            padding: 12px 14px;
+            margin-top: 12px;
             font-family: 'Courier New', monospace;
-            color: #00d9ff;
+            color: #7dd3fc;
             word-break: break-all;
-            max-height: 120px;
+            max-height: 140px;
             overflow-y: auto;
+            border: 1px solid #2d4a6e;
+            font-size: 0.75rem;
+            border-radius: 0px;
+        }
+
+        /* všetky prvky – žiadne zaoblenie */
+        button, input, select, .card, .badge, .status-bar, .config-panel, .stat-card, .feed-item, .session-panel-info {
+            border-radius: 0px !important;
+        }
+
+        /* odstránenie akýchkoľvek bubliniek */
+        .status-dot, .spinner, .circle {
+            display: none;
         }
     </style>
 </head>
 <body>
-    <div class="container">
+<div class="container">
 
-        <!-- ═══════════════════════════════════════════════════
-             HLAVIČKA
-             ═══════════════════════════════════════════════════ -->
-        <div class="header">
-            <h1>📡 IoT Network Dashboard</h1>
-            <p style="color: #8892b0;">
-                Frontend B — Zobrazenie sieťových konverzií a sensor data
-            </p>
-            <div style="margin-top: 12px;">
-                <span class="badge badge-red">Len čítanie</span>
-                <span class="badge badge-red">CORS</span>
-                <span class="badge badge-green">Gbps ↔ Mbps</span>
-            </div>
+    <!-- ═══════════════════════════════════════════════════
+         HLAVIČKA – BOXOVÝ DIZAJN
+         ═══════════════════════════════════════════════════ -->
+    <div class="header">
+        <h1>📦 IoT Network Dashboard | BOX MODE</h1>
+        <p style="color: #9ca3af;">Frontend B — Čítanie sieťových konverzií (hranaté boxy, žiadne bublinky)</p>
+        <div style="margin-top: 12px;">
+            <span class="badge badge-red">🔲 LEN ČÍTANIE</span>
+            <span class="badge badge-red">📡 CORS + POLLING</span>
+            <span class="badge badge-green">⚡ Gbps ↔ Mbps</span>
         </div>
-
-        <!-- ═══════════════════════════════════════════════════
-             KONFIGURÁCIA BACKENDU
-             ═══════════════════════════════════════════════════
-             Študent tu zadá URL svojho backendu.
-             V reálnom nasadení by toto bolo napevno v kóde.
-             ═══════════════════════════════════════════════════ -->
-        <div class="config-panel">
-            <h3>⚙️ Pripojenie na backend</h3>
-            <p style="color: #8892b0; font-size: 0.9em;">
-                Zadajte URL backendu, odkiaľ sa budú načítavať dáta.
-                Backend musí mať povolený <code>CORS</code>, inak komunikácia zlyhá!
-            </p>
-            <div class="config-input">
-                <input type="text" id="backendUrl"
-                       placeholder="http://localhost:5000"
-                       value="">
-                <button onclick="pripojNaBackend()">Pripojiť</button>
-            </div>
-            <p style="color: #555; font-size: 0.8em; margin-top: 8px;">
-                Lokálne: <code>http://localhost:5000</code> |
-                Azure: <code>http://tvoj-backend.azurewebsites.net</code>
-            </p>
-        </div>
-
-        <!-- ═══════════════════════════════════════════════════
-             STATUS BAR — Stav pripojenia
-             ═══════════════════════════════════════════════════ -->
-        <div class="status-bar">
-            <div>
-                <span class="status-dot offline" id="statusDot"></span>
-                <span id="statusText">Nepripojené</span>
-            </div>
-            <div style="color: #8892b0; font-size: 0.85em;">
-                Posledná aktualizácia: <span id="lastUpdate">—</span>
-            </div>
-        </div>
-
-        <!-- ═══════════════════════════════════════════════════
-             POSLEDNÝ VÝPOČET (veľký display)
-             ═══════════════════════════════════════════════════ -->
-        <div class="card">
-            <h2>🎯 Posledný výpočet</h2>
-            <div class="big-display" id="poslednyDisplay">
-                <div class="empty-state">
-                    <div class="emoji">📡</div>
-                    <p>Pripojte sa na backend pre zobrazenie dát</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═══════════════════════════════════════════════════
-             ŠTATISTIKY
-             ═══════════════════════════════════════════════════ -->
-        <div class="card">
-            <h2>📈 Štatistiky</h2>
-            <div class="stats-grid" id="statsGrid">
-                <div class="stat-card">
-                    <div class="stat-value" id="statPocet">—</div>
-                    <div class="stat-label">Celkom konverzií</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="statPriemer">—</div>
-                    <div class="stat-label">Priemerný výsledok</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="statPlus">—</div>
-                    <div class="stat-label">Gbps → Mbps</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="statMinus">—</div>
-                    <div class="stat-label">MB/s → Mbps</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═══════════════════════════════════════════════════
-             LIVE FEED — Všetky výpočty
-             ═══════════════════════════════════════════════════
-             Automaticky sa obnovuje každých 5 sekúnd.
-             Simuluje "live" dáta z IoT senzorov.
-             ═══════════════════════════════════════════════════ -->
-        <div class="card">
-            <h2>📋 Live Feed</h2>
-            <p style="color: #8892b0; margin-bottom: 15px; font-size: 0.9em;">
-                Dáta z API endpointu <code style="background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; color: #d946ff;">/api/historia</code>
-                — automatická obnova každých 5 sekúnd
-            </p>
-            <div class="live-feed" id="liveFeed">
-                <div class="empty-state">
-                    <p>Čakám na pripojenie...</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- ═══════════════════════════════════════════════════
-             SESSION ID PANEL (NOVÁ PREMENNÁ)
-             ═══════════════════════════════════════════════════ -->
-        <div class="session-panel-info">
-            <strong>🔐 Zozbierané Session IDs (Nová premenná):</strong>
-            <div class="session-ids-display" id="sessionIdsDisplay">
-                Čakám na dáta z backendu...
-            </div>
-        </div>
-
     </div>
 
-    <!-- ═══════════════════════════════════════════════════════════════════
-         JAVASCRIPT — Komunikácia s backendom
-         ═══════════════════════════════════════════════════════════════════
-         KĽÚČOVÉ KONCEPTY PRE ŠTUDENTOV:
+    <!-- ═══════════════════════════════════════════════════
+         KONFIGURÁCIA BACKENDU (BOX INPUT)
+         ═══════════════════════════════════════════════════ -->
+    <div class="config-panel">
+        <h3>⚙️ Pripojenie na backend (CORS / REST API)</h3>
+        <p style="color: #9ca3af; font-size: 0.85rem;">
+            Zadajte URL backendu (Flask server). Backend musí podporovať CORS!
+        </p>
+        <div class="config-input">
+            <input type="text" id="backendUrl"
+                   placeholder="http://localhost:5000"
+                   value="">
+            <button onclick="pripojNaBackend()">🔲 PRIPOJIŤ</button>
+        </div>
+        <p style="color: #6c86a3; font-size: 0.7rem; margin-top: 10px;">
+            Lokálne: <code>http://localhost:5000</code> | Azure: <code>https://tvoj-backend.azurewebsites.net</code>
+        </p>
+    </div>
 
-         1. fetch() API
-            - Moderný spôsob posielania HTTP requestov z JavaScriptu
-            - Vracia Promise (asynchrónny výsledok)
-            - Nahradzuje starší XMLHttpRequest (XHR)
+    <!-- ═══════════════════════════════════════════════════
+         STATUS BAR – boxová indikácia (namiesto kruhu)
+         ═══════════════════════════════════════════════════ -->
+    <div class="status-bar">
+        <div>
+            <span class="status-box offline" id="statusBox"></span>
+            <span id="statusText" style="font-weight: 500;">Nepripojené</span>
+        </div>
+        <div style="color: #9ca3af; font-size: 0.75rem;">
+            Posledná aktualizácia: <span id="lastUpdate">—</span>
+        </div>
+    </div>
 
-         2. CORS (Cross-Origin Resource Sharing)
-            - Prehliadač blokuje requesty na INÚ doménu (bezpečnosť)
-            - Backend musí poslať hlavičku: Access-Control-Allow-Origin
-            - flask-cors to rieši automaticky
+    <!-- ═══════════════════════════════════════════════════
+         POSLEDNÝ VÝPOČET (veľký box displej)
+         ═══════════════════════════════════════════════════ -->
+    <div class="card">
+        <h2>🎯 Posledný výpočet (live)</h2>
+        <div class="big-display" id="poslednyDisplay">
+            <div class="empty-state">
+                <div class="emoji">📭</div>
+                <p>Pripojte sa na backend pre zobrazenie dát</p>
+            </div>
+        </div>
+    </div>
 
-         3. Polling (pravidelné dopytovanie)
-            - setInterval() = opakuj funkciu každých X milisekúnd
-            - Alternatíva: WebSocket (trvalé spojenie) — pokročilejšie
-         ═══════════════════════════════════════════════════════════════════ -->
-    <script>
-        // ──────────────────────────────────────────────────────────────
-        // GLOBÁLNE PREMENNÉ
-        // ──────────────────────────────────────────────────────────────
-        let backendUrl = "";          // URL backendu (nastaví sa po pripojení)
-        let refreshInterval = null;    // ID intervalu (na zastavenie)
-        let poslednePocetZaznamov = 0; // Na detekciu nových záznamov
-        let zoznamSessionIds = [];     // Zoznam zozbieraných sessionId (NOVÁ PREMENNÁ)
+    <!-- ═══════════════════════════════════════════════════
+         ŠTATISTIKY – boxové karty
+         ═══════════════════════════════════════════════════ -->
+    <div class="card">
+        <h2>📊 Štatistiky konverzií</h2>
+        <div class="stats-grid" id="statsGrid">
+            <div class="stat-card">
+                <div class="stat-value" id="statPocet">—</div>
+                <div class="stat-label">Celkom konverzií</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statPriemer">—</div>
+                <div class="stat-label">Priemerný výsledok</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statPlus">—</div>
+                <div class="stat-label">Gbps → Mbps</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-value" id="statMinus">—</div>
+                <div class="stat-label">MB/s → Mbps</div>
+            </div>
+        </div>
+    </div>
 
-        // ──────────────────────────────────────────────────────────────
-        // PRIPOJENIE NA BACKEND
-        // ──────────────────────────────────────────────────────────────
-        function pripojNaBackend() {
-            let url = document.getElementById("backendUrl").value.trim();
+    <!-- ═══════════════════════════════════════════════════
+         LIVE FEED – boxový zoznam (polling každých 5s)
+         ═══════════════════════════════════════════════════ -->
+    <div class="card">
+        <h2>📋 Live Feed (API: /api/historia)</h2>
+        <p style="color: #9ca3af; margin-bottom: 16px; font-size: 0.8rem;">
+            Automatická obnova každých 5 sekúnd – čistý box feed
+        </p>
+        <div class="live-feed" id="liveFeed">
+            <div class="empty-state">
+                <p>⏳ Čakám na pripojenie k backendu...</p>
+            </div>
+        </div>
+    </div>
 
-            // Predvolená hodnota
-            if (!url) url = window.location.origin;
+    <!-- ═══════════════════════════════════════════════════
+         SESSION ID PANEL – zbierané sessionId (nová premenná)
+         ═══════════════════════════════════════════════════ -->
+    <div class="session-panel-info">
+        <strong>🔐 Zozbierané Session IDs (unikátne boxy):</strong>
+        <div class="session-ids-display" id="sessionIdsDisplay">
+            Čakám na dáta z backendu...
+        </div>
+    </div>
 
-            // Odstránime koncové lomítko
-            backendUrl = url.replace(/\/$/, "");
+</div>
 
-            console.log("🔗 Pripájam sa na:", backendUrl);
+<script>
+    // ═══════════════════════════════════════════════════════════════════
+    // FRONTEND B – BOXOVÁ LOGIKA (žiadne bubliny, čistý fetch + polling)
+    // ═══════════════════════════════════════════════════════════════════
+    let backendUrl = "";
+    let refreshInterval = null;
+    let poslednePocetZaznamov = 0;
+    let zoznamSessionIds = [];       // unikátne sessionId
 
-            // Zastavíme predchádzajúci interval (ak existuje)
-            if (refreshInterval) clearInterval(refreshInterval);
+    // ──────────────────────────────────────────────────────────────
+    // PRIPOJENIE NA BACKEND + SPUSTENIE POLLINGU
+    // ──────────────────────────────────────────────────────────────
+    function pripojNaBackend() {
+        let url = document.getElementById("backendUrl").value.trim();
+        if (!url) url = window.location.origin;
+        backendUrl = url.replace(/\/$/, "");
 
-            // Prvé načítanie dát
-            nacitajVsetko();
+        console.log("📦 Pripájam box klienta na:", backendUrl);
 
-            // Nastavíme automatickú obnovu každých 5 sekúnd (5000 ms)
-            // Toto je "polling" — najprostejší spôsob live dát
-            refreshInterval = setInterval(nacitajVsetko, 5000);
+        if (refreshInterval) clearInterval(refreshInterval);
+
+        // ihneď načítame dáta
+        nacitajVsetko();
+
+        // polling každých 5000 ms (5 sekúnd) – boxový refresh
+        refreshInterval = setInterval(nacitajVsetko, 5000);
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // HLAVNÉ NAČÍTANIE (dva endpointy paralelne)
+    // ──────────────────────────────────────────────────────────────
+    async function nacitajVsetko() {
+        if (!backendUrl) {
+            aktualizujStatus(false, "Nastavte backend URL");
+            return;
+        }
+        try {
+            const [historiaRes, statsRes] = await Promise.all([
+                fetch(`${backendUrl}/api/historia`),
+                fetch(`${backendUrl}/api/statistiky`)
+            ]);
+
+            if (!historiaRes.ok || !statsRes.ok) throw new Error("HTTP chyba");
+
+            const historia = await historiaRes.json();
+            const stats = await statsRes.json();
+
+            aktualizujStatus(true);
+            zobrazPosledny(historia);
+            zobrazStatistiky(stats);
+            zobrazLiveFeed(historia);
+            spracujSessionIds(historia);
+
+        } catch (error) {
+            console.error("❌ Chyba (CORS / backend nedostupný):", error);
+            aktualizujStatus(false, "Chyba spojenia / CORS");
+            document.getElementById("liveFeed").innerHTML = `<div class="empty-state"><div class="emoji">⚠️</div><p>Nepodarilo sa načítať dáta. Skontrolujte backend URL a CORS hlavičky.</p></div>`;
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // STATUS (boxový indikátor namiesto kruhu)
+    // ──────────────────────────────────────────────────────────────
+    function aktualizujStatus(online, customMsg = null) {
+        const boxIndicator = document.getElementById("statusBox");
+        const statusSpan = document.getElementById("statusText");
+        const updateSpan = document.getElementById("lastUpdate");
+
+        if (online) {
+            boxIndicator.className = "status-box online";
+            statusSpan.textContent = customMsg ? customMsg : `✅ Pripojené na ${backendUrl}`;
+            updateSpan.textContent = new Date().toLocaleTimeString("sk-SK");
+        } else {
+            boxIndicator.className = "status-box offline";
+            statusSpan.textContent = customMsg || "❌ Offline – skontrolujte CORS / URL";
+            updateSpan.textContent = "—";
+        }
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // ZOBRAZENIE POSLEDNÉHO VÝPOČTU
+    // ──────────────────────────────────────────────────────────────
+    function zobrazPosledny(historia) {
+        const displayDiv = document.getElementById("poslednyDisplay");
+        if (!historia || historia.length === 0) {
+            displayDiv.innerHTML = `<div class="empty-state"><div class="emoji">📭</div><p>Zatiaľ žiadne konverzie. Vytvorte výpočet na Frontende A.</p></div>`;
+            return;
+        }
+        const posledny = historia[0];
+        const vstup = posledny.hodnota !== undefined ? posledny.hodnota : (posledny.cislo1 || "?");
+        const fromUnit = posledny.fromUnit || posledny.vstupna_jednotka || "?";
+        const toUnit = posledny.toUnit || posledny.vystupna_jednotka || "?";
+        displayDiv.innerHTML = `
+            <div class="big-number">${posledny.vysledok} ${toUnit}</div>
+            <div class="big-detail">${vstup} ${fromUnit}  →  ${posledny.vysledok} ${toUnit}</div>
+            <div class="big-time">🔲 ID: #${posledny.id}  |  ${posledny.cas || "—"}</div>
+        `;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // ŠTATISTIKY
+    // ──────────────────────────────────────────────────────────────
+    function zobrazStatistiky(stats) {
+        if (!stats) return;
+        document.getElementById("statPocet").innerHTML = stats.celkovy_pocet ?? 0;
+        const priemer = stats.priemerny_vysledok ? parseFloat(stats.priemerny_vysledok).toFixed(2) : "0";
+        document.getElementById("statPriemer").innerHTML = priemer;
+        document.getElementById("statPlus").innerHTML = stats.podla_konverzie?.["Gbps→Mbps"] || 0;
+        document.getElementById("statMinus").innerHTML = stats.podla_konverzie?.["MBps→Mbps"] || 0;
+    }
+
+    // ──────────────────────────────────────────────────────────────
+    // LIVE FEED S DETEKCIOU NOVÝCH POLOŽIEK (animácia box)
+    // ──────────────────────────────────────────────────────────────
+    function zobrazLiveFeed(historia) {
+        const feedContainer = document.getElementById("liveFeed");
+        if (!historia || historia.length === 0) {
+            feedContainer.innerHTML = `<div class="empty-state"><p>📭 Zatiaľ žiadne konverzie</p></div>`;
+            return;
         }
 
-        // ──────────────────────────────────────────────────────────────
-        // NAČÍTANIE VŠETKÝCH DÁT
-        // ──────────────────────────────────────────────────────────────
-        async function nacitajVsetko() {
-            try {
-                // Paralelné načítanie z dvoch endpointov naraz
-                // Promise.all() = počká, kým sa dokončia OBE operácie
-                const [historiaRes, statsRes] = await Promise.all([
-                    fetch(`${backendUrl}/api/historia`),
-                    fetch(`${backendUrl}/api/statistiky`)
-                ]);
+        const jeNovy = historia.length > poslednePocetZaznamov;
+        poslednePocetZaznamov = historia.length;
 
-                // ─── CORS CHECK ───
-                // Ak fetch() uspeje, znamená to, že CORS je správne nastavený.
-                // Ak CORS nie je povolený, fetch() vyhodí chybu → catch blok.
-
-                const historia = await historiaRes.json();
-                const stats = await statsRes.json();
-
-                // Aktualizujeme UI
-                aktualizujStatus(true);
-                zobrazPosledny(historia);
-                zobrazStatistiky(stats);
-                zobrazLiveFeed(historia);
-
-            } catch (error) {
-                console.error("❌ Chyba pri načítaní dát:", error);
-                aktualizujStatus(false);
-
-                // Typická chyba pri CORS probléme:
-                // "TypeError: Failed to fetch" alebo "CORS policy" v konzole
-            }
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        // AKTUALIZÁCIA STAVU PRIPOJENIA
-        // ──────────────────────────────────────────────────────────────
-        function aktualizujStatus(jeOnline) {
-            const dot = document.getElementById("statusDot");
-            const text = document.getElementById("statusText");
-            const update = document.getElementById("lastUpdate");
-
-            if (jeOnline) {
-                dot.className = "status-dot online";
-                text.textContent = `Pripojené na ${backendUrl}`;
-                update.textContent = new Date().toLocaleTimeString("sk-SK");
-            } else {
-                dot.className = "status-dot offline";
-                text.textContent = "Chyba pripojenia (skontrolujte CORS a URL)";
-            }
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        // ZOBRAZENIE POSLEDNÉHO VÝPOČTU
-        // ──────────────────────────────────────────────────────────────
-        function zobrazPosledny(historia) {
-            const display = document.getElementById("poslednyDisplay");
-
-            if (!historia || historia.length === 0) {
-                display.innerHTML = `
-                    <div class="empty-state">
-                        <div class="emoji">📭</div>
-                        <p>Zatiaľ žiadne konverzie. Zadajte niečo na Frontende A!</p>
-                    </div>
-                `;
-                return;
-            }
-
-            const posledny = historia[0];
-            const vstup = posledny.hodnota !== undefined ? posledny.hodnota : posledny.cislo1;
-            const fromUnit = posledny.fromUnit || posledny.vstupna_jednotka || "?";
-            const toUnit = posledny.toUnit || posledny.vystupna_jednotka || "?";
-
-            display.innerHTML = `
-                <div class="big-number">${posledny.vysledok} ${toUnit}</div>
-                <div class="big-detail">${vstup} ${fromUnit} → ${posledny.vysledok} ${toUnit}</div>
-                <div class="big-time">ID: #${posledny.id} | ${posledny.cas}</div>
+        let feedHtml = "";
+        historia.forEach((item, idx) => {
+            const novyClass = (idx === 0 && jeNovy) ? "new" : "";
+            const fromUnit = item.fromUnit || item.vstupna_jednotka || "?";
+            const toUnit = item.toUnit || item.vystupna_jednotka || "?";
+            const hodnota = item.hodnota !== undefined ? item.hodnota : (item.cislo1 || "?");
+            feedHtml += `
+                <div class="feed-item ${novyClass}">
+                    <span class="feed-id">#${item.id}</span>
+                    <span class="feed-calc">${hodnota} ${fromUnit} → ${toUnit}</span>
+                    <span class="feed-result">${item.vysledok}</span>
+                    <span class="feed-time">${item.cas || "—"}</span>
+                </div>
             `;
-        }
+        });
+        feedContainer.innerHTML = feedHtml;
+    }
 
-        // ──────────────────────────────────────────────────────────────
-        // ZOBRAZENIE ŠTATISTÍK
-        // ──────────────────────────────────────────────────────────────
-        function zobrazStatistiky(stats) {
-            document.getElementById("statPocet").textContent = stats.celkovy_pocet || 0;
-            document.getElementById("statPriemer").textContent =
-                stats.priemerny_vysledok ? stats.priemerny_vysledok.toFixed(2) : "0";
-            document.getElementById("statPlus").textContent =
-                stats.podla_konverzie?.["Gbps→Mbps"] || 0;
-            document.getElementById("statMinus").textContent =
-                stats.podla_konverzie?.["MBps→Mbps"] || 0;
-        }
-
-        // ──────────────────────────────────────────────────────────────
-        // ZOBRAZENIE LIVE FEEDU
-        // ──────────────────────────────────────────────────────────────
-        function zobrazLiveFeed(historia) {
-            const feed = document.getElementById("liveFeed");
-
-            if (!historia || historia.length === 0) {
-                feed.innerHTML = `
-                    <div class="empty-state">
-                        <p>Čakám na dáta...</p>
-                    </div>
-                `;
-                return;
+    // ──────────────────────────────────────────────────────────────
+    // SPRACOVANIE SESSION IDS (NOVÁ PREMENNÁ – boxová zbierka)
+    // ──────────────────────────────────────────────────────────────
+    function spracujSessionIds(historia) {
+        if (!historia || historia.length === 0) return;
+        let noveSessionIds = [];
+        historia.forEach(item => {
+            if (item.sessionId && !zoznamSessionIds.includes(item.sessionId)) {
+                noveSessionIds.push(item.sessionId);
             }
-
-            const symboly = { plus: "+", minus: "−", krat: "×", deleno: "÷" };
-            const jeNovy = historia.length > poslednePocetZaznamov;
-            poslednePocetZaznamov = historia.length;
-
-            // ─── ZBIERANIE SESSION IDS (NOVÁ PREMENNÁ) ───
-            // Extrahujeme sessionId z každého záznamu
-            historia.forEach((item) => {
-                if (item.sessionId && !zoznamSessionIds.includes(item.sessionId)) {
-                    zoznamSessionIds.unshift(item.sessionId); // Nové na začiatok
-                    if (zoznamSessionIds.length > 20) zoznamSessionIds.pop(); // Max 20
-                }
-            });
-
-            // Aktualizujeme display sessionIds
-            if (zoznamSessionIds.length > 0) {
-                document.getElementById("sessionIdsDisplay").innerHTML =
-                    zoznamSessionIds.map(sid => `<div>• ${sid}</div>`).join("");
-            }
-
-            let html = "";
-            historia.forEach((item, index) => {
-                const novyClass = (index === 0 && jeNovy) ? "new" : "";
-                const fromUnit = item.fromUnit || item.vstupna_jednotka || "?";
-                const toUnit = item.toUnit || item.vystupna_jednotka || "?";
-                const hodnota = item.hodnota !== undefined ? item.hodnota : item.cislo1;
-
-                html += `
-                    <div class="feed-item ${novyClass}">
-                        <span class="feed-id">#${item.id}</span>
-                        <span class="feed-calc">${hodnota} ${fromUnit} → ${toUnit}</span>
-                        <span class="feed-result">${item.vysledok}</span>
-                        <span class="feed-time">${item.cas}</span>
-                    </div>
-                `;
-            });
-
-            feed.innerHTML = html;
+        });
+        if (noveSessionIds.length > 0) {
+            zoznamSessionIds = [...noveSessionIds, ...zoznamSessionIds];
+            // max 30 unikátnych ID, aby sa nepreplnil panel
+            if (zoznamSessionIds.length > 30) zoznamSessionIds = zoznamSessionIds.slice(0, 30);
         }
 
-        // ──────────────────────────────────────────────────────────────
-        // INICIALIZÁCIA
-        // ──────────────────────────────────────────────────────────────
-        // Predvyplníme URL pole aktuálnou doménou
-        document.getElementById("backendUrl").value = window.location.origin;
+        const sessionDiv = document.getElementById("sessionIdsDisplay");
+        if (zoznamSessionIds.length === 0) {
+            sessionDiv.innerHTML = "⏳ Zatiaľ žiadne sessionId z backendu...";
+        } else {
+            sessionDiv.innerHTML = zoznamSessionIds.map(sid => `<div style="border-bottom: 1px solid #2d4a6e; padding: 5px 0;">📦 ${sid}</div>`).join("");
+        }
+    }
 
-        // Automatické pripojenie (ak sme na rovnakej doméne)
-        pripojNaBackend();
-    </script>
+    // ──────────────────────────────────────────────────────────────
+    // INICIALIZÁCIA – automatické pripojenie (predvolená URL)
+    // ──────────────────────────────────────────────────────────────
+    const defaultUrl = window.location.origin;
+    document.getElementById("backendUrl").value = defaultUrl;
+    pripojNaBackend();
+</script>
 </body>
 </html>
